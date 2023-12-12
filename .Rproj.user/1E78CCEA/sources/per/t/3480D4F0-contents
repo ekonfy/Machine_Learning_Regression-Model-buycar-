@@ -1,0 +1,350 @@
+---
+title: "regression for car price prediction"
+author: "Eko Nurfitriyanto"
+date: "4/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+
+#library and setup 
+
+```{r}
+# data wrangling
+library(tidyverse)
+
+#cek asumsi model 
+library(lmtest)
+library(car)
+
+#menghitung error 
+
+library(MLmetrics)
+
+#visualisai korelasi 
+library(GGally)
+
+```
+
+
+#import data
+
+```{r}
+car_Data <- read.csv("data_input/car data.csv")
+
+glimpse(car_Data)
+
+```
+Data Description:
+
+- `Car_Name`: Nama/model dari mobil
+- `Year`: Tahun produksi
+- `Selling_Price`: Harga jual
+- `Present_Price`: Harga beli saat ini
+- `Kms_Driven`: Jumlah kilometer yang sudah ditempuh
+- `Fuel_Type`: Jenis bahan bakar
+- `Seller_Type`: Jenis penjual
+- `Transmission`: Jenis transmisi
+- `Owner`: Status sebagai pemilik (1 = yes, 0 = no)
+
+cek banyaknya pakai table 
+```{r}
+table(car_Data$Owner)
+```
+
+# check data 
+
+## check data type (rubah data dari charakter ke faktor)
+```{r}
+df_data <- car_Data %>% 
+  mutate_if(is.character, as.factor)
+```
+
+
+
+
+## check missing value
+cek jumlah missing value (NA) dari tiap kolom 
+
+```{r}
+colSums(is.na(df_data))
+
+```
+
+
+
+#  Exorasi Data (EDA) Exploratory data analysis 
+
+- cek nilai unik setiap kolom kategori 
+
+
+
+
+```{r}
+table(df_data$Owner, df_data$Fuel_Type)
+```
+- cek ada berapa variasi kategori owner dan fule type, karena kategori fule type "CNG" dan Owner "3" sangat jarang, Fuel Type CNG dikeluarkan dari data danOwner 3 diganti 1. 
+
+```{r}
+df_data <- df_data %>% 
+  mutate(
+    Owner = ifelse(Owner == 3, yes = 1, no = Owner)) %>%  # ganti 3 jadi 1 / bila na pake is.na ganti tulisan owner nya 
+  filter(Fuel_Type != "CNG") #buang fule cng
+```
+
+
+- ada berapa jenis mobil 
+
+```{r}
+n_distinct(df_data$Car_Name)
+```
+
+- korelasi 
+
+```{r}
+ggcorr(df_data, label = T)
+
+
+```
+
+
+
+
+
+
+- cek hubungan km driver dengan selling price
+
+```{r}
+options(scipen = 999)
+plot(df_data$Kms_Driven, df_data$Selling_Price)
+```
+
+
+
+
+
+
+- cek distribusi target variabel (selling price)
+
+```{r}
+boxplot(df_data$Selling_Price)
+```
+
+
+cek dengan variabel ketika outlier kms driven < 100,000
+
+```{r}
+df_filter <- df_data %>% 
+  filter(Kms_Driven <150000)
+
+plot(df_filter$Kms_Driven, df_filter$Selling_Price)
+
+```
+```{r}
+ggcorr(df_filter, label = T) #cek korelasi lagi 
+```
+
+
+
+
+
+
+
+
+
+
+- Hubungan tahun dangan seling price 
+```{r}
+plot(df_data$Year, df_data$Selling_Price)
+```
+
+- rata-rata selling price tiap car name 
+
+```{r}
+df_data %>% 
+  group_by(Car_Name) %>% 
+  summarise(Selling_Price= mean(Selling_Price),
+            freq = n()) %>% 
+  arrange(desc(Selling_Price))
+```
+
+
+
+# model fitting
+
+buat 2 varian model untuk memprediksi selling price 
+
+- yang di filer km < 150,000
+- yang data utuh 
+
+```{r}
+# model_filter
+#membuat model tanpa car name
+
+df_filter <- df_data %>% filter(Kms_Driven < 150000)
+model_filter <- lm(formula = Selling_Price ~ .,  data = df_filter %>%  select(-Car_Name))
+
+summary(model_filter)
+
+
+
+#adjusted R-square
+summary_model <- summary(model_filter)
+summary_model$adj.r.squared
+
+
+# model_penuh
+
+model_penuh <-  lm(formula = Selling_Price ~ ., data = df_data)
+summary(model_penuh)
+
+
+
+```
+
+
+interprestasi  lm model_filter : 
+
+- Adjusted R-square: 88.87% => model menjelaskan 88% variasi dari selling price, sisanya dijelaskan faktor lain yang belum ada di model 
+- p- value dari 'owner' tidak signifikan (tidak ada *), maka kita bisa anggap Owner tidak berpengaruh atau pengaruhnya kecil terhadap selling price 
+- estimate klo (-) harga turun , lihat di atas 
+* jika fuel type = petrol, harganya turun karena estimate bernilain negatif (-)
+* jika seller = individual, harganya turun karena estimate nilainya negatif (-)
+* jika transmisi = manual, harganya turun karena estimate nilainya negatif (-)
+* jika km driven bertambah, harga turun, setiap penambahan 1 km harga turun 0.00003
+
+
+
+
+
+# model evaluation 
+
+
+prediksi data baru
+
+```{r}
+car_new <- read.csv("data_input/car_test.csv")
+car_new
+
+```
+
+```{r}
+pred_test <- predict(model_filter, newdata = car_new)
+
+head(pred_test)
+
+```
+
+cek error dari model 
+
+- MAE 
+- MAPE
+- RMSE
+
+
+```{r}
+# mean Absolute Error
+MAE(pred_test, car_new$Selling_Price)
+
+#Mean Absolute precentage Error
+MAPE(pred_test, car_new$Selling_Price)
+
+# Root Mean Square Error
+RMSE(pred_test, car_new$Selling_Price)
+```
+
+Interpretasi:
+- MAE 1.3 = rata rata prediksinya meleset 1.3 ribu USD 
+- RMSE 1.9 = secara rata rata prediksi meleset 1.9 ribu USD
+- MAPE 1.29 = rata rata error sebesar129% (karena ada 1 error yg outlier jadi terlihat besar)
+
+
+
+
+
+
+
+
+
+#uji Asumsi 
+
+## Multikolinearitas
+
+syarat terpenuhin semua variabel VIF < 10,  VIF = variance influance factor , ingin cek apakah ada prediktor yang berhubungan dengan prediktor lain.
+
+```{r}
+vif(model_filter)
+```
+
+
+## Error Berdistribusi Normal
+
+```{r}
+plot(density(model_filter$residuals))
+```
+
+
+syarat terpenuhi :p-value > 0.05
+
+```{r}
+shapiro.test(model_filter$residuals)
+```
+
+
+karena p-value < 0.05, maka residual/error tidak berdistribusi normal 
+
+```{r}
+qqPlot(model_filter$residuals)
+
+```
+
+
+## Heteroskesdaticity / Unequal Variance
+
+syarat terpenuhi : p-value > 0.05
+
+```{r}
+
+bptest(model_filter)
+
+```
+Dari plot juga terbentuk pola sihingga syarat tidak terpenuhi 
+
+```{r}
+plot(model_filter$fitted.values, model_filter$residuals)
+```
+
+
+## Linearity 
+
+Dari plot juga terbentuk pola sihingga syarat tidak terpenuhi 
+
+
+```{r}
+data.frame(prediksi = model_filter$fitted.values, error = model_filter$residuals) %>% 
+  ggplot(aes(prediksi,error))+
+  geom_hline(yintercept = 0)+ #garis lurus di sumbu y = 0
+  geom_point()+
+  geom_smooth()
+
+
+```
+
+
+
+
+
+

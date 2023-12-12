@@ -1,0 +1,2 @@
+"0","ggcorr(df_filter, label = T) #cek korelasi lagi "
+"2","data in column(s) 'Car_Name', 'Fuel_Type', 'Seller_Type', 'Transmission' are not numeric and were ignored"

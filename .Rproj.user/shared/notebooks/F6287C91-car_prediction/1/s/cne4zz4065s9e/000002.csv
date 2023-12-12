@@ -1,0 +1,5 @@
+"0","df_filter <- df_data %>% "
+"0","  filter(Kms_Driven <150000)"
+"0",""
+"0","plot(df_filter$Kms_Driven, df_filter$Selling_Price)"
+"0",""

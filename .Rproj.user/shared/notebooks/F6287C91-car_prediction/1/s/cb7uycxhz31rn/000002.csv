@@ -1,0 +1,5 @@
+"0","df_data %>% "
+"0","  group_by(Car_Name) %>% "
+"0","  summarise(Selling_Price= mean(Selling_Price),"
+"0","            freq = n()) %>% "
+"0","  arrange(desc(Selling_Price))"

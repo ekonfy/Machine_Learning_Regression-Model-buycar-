@@ -1,0 +1,236 @@
+---
+title: "Predict Buy Car"
+author: "Eko Nurfitriyanto"
+date: "5/4/2021"
+output: 
+  html_document:
+    theme: flatly
+    higlight: zenburn
+    toc: true
+    toc_float:
+      collapsed: false
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Prediksi harga beli mobil saat ini
+
+
+```{r}
+knitr::include_graphics("Beli-mobil.jpg")
+```
+
+
+menggunakan linear regression analysis, akan dibuat suatu model untuk memprediksi faktor-faktor yang menjadikan harga beli mobil 
+
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(lmtest)
+library(car)
+library(MLmetrics)
+library(GGally)
+
+```
+
+# load dataset
+
+```{r}
+car <- read.csv("data_car.csv")
+```
+
+# Explanatory Data Analysis
+
+```{r}
+glimpse(car)
+```
+Keterangan di setiap kolom: 
+
+- `Car_Name`: Nama/model dari mobil 
+- `Year`: Tahun produksi/pembuatan
+- `Selling_Price`: Harga jual mobil
+- `Present_Price`: Harga beli mobil saat ini
+- `Kms_Driven`: Jumlah kilometer yang sudah ditempuh
+- `Fuel_Type`: Jenis bahan bakar
+- `Seller_Type`: Jenis penjual
+- `Transmission`: Jenis transmisi mobil
+- `Owner`: Status sebagai pemilik (1 = yes, 0 = no)
+
+
+## Change data 
+
+```{r}
+df_car <- car %>% 
+  mutate_if(is.character, as.factor)
+```
+
+
+## check missing value
+cek jumlah missing value (NA) dari tiap kolom 
+
+```{r}
+colSums(is.na(df_car))
+```
+
+## correlation
+
+```{r}
+ggcorr(df_car, label = T)
+
+
+```
+Pada grafik korelasi, terlihat bahwa semua variabel memiliki pengaruh positif dan negative terhadap Present_Price dimana faktor Selling_Price memiliki korelasi positif yang paling tinggi dibandingkan faktor-faktor lain.
+
+
+## cek distribusi target variabel (Present Price)
+
+```{r}
+boxplot(df_car$Present_Price)
+```
+
+## Hubungan tahun dangan present price
+
+```{r}
+plot(df_car$Year, df_car$Present_Price)
+```
+
+## rata-rata present price tiap car name 
+```{r}
+df_car %>% 
+  group_by(Car_Name) %>% 
+  summarise(Present_Price= mean(Present_Price),
+            freq = n()) %>% 
+  arrange(desc(Present_Price))
+```
+untuk harga termahal jenis mobil land cruiser dan mobil paling banyak yang beli jenis city 
+
+
+# Pembuatan Model Regresi Linear
+
+Selanjutnya dapat dibuat model regresi linear dengan menggunakan model penuh, terhadap variabel target present price dan mem filter nama dari mobil 
+
+```{r}
+model_car <-  lm(formula = Present_Price ~ ., data = df_car %>%  select(-Car_Name))
+summary(model_car)
+```
+
+```{r}
+plot(df_car$Selling_Price, df_car$Present_Price)
+abline(df_car)
+```
+
+interprestasi  lm model_car : 
+
+- Adjusted R-square: 77.18% => model menjelaskan 77% variasi dari Present price, 
+- p-value dari Selling price dan year berpengaruh besar terhadap present price
+- estimate klo (-) harga turun , lihat di atas 
+* jika fuel type = petrol & Diesel, harganya turun karena estimate bernilain negatif (-)
+* jika seller = individual, harganya turun karena estimate nilainya negatif (-)
+
+
+## model evaluation 
+
+prediksi data baru 
+
+```{r}
+test_car <- read.csv("car_test.csv")
+test_car
+```
+```{r}
+pred_test <- predict(model_car, newdata = test_car)
+
+head(pred_test)
+```
+
+Cek Error Model
+
+mean Absolute Error
+
+```{r}
+MAE(pred_test, test_car$Present_Price)
+```
+Mean Absolute precentage Error
+
+```{r}
+MAPE(pred_test, test_car$Present_Price)
+```
+Root Mean Square Error
+```{r}
+RMSE(pred_test, test_car$Present_Price)
+```
+# Uji Asumsi 
+
+## Multikolinearitas
+syarat terpenuhin semua variabel VIF < 10,  VIF = variance influance factor , ingin cek apakah ada prediktor yang berhubungan dengan prediktor lain.
+
+```{r}
+vif(model_car)
+```
+
+## Error Berdistribusi Normal
+```{r}
+plot(density(model_car$residuals))
+```
+
+
+```{r}
+shapiro.test(model_car$residuals)
+```
+karena p-value < 0.05, maka residual/error tidak berdistribusi normal 
+
+```{r}
+qqPlot(model_car$residuals)
+```
+
+# SHeteroskesdaticity / Unequal Variance 
+```{r}
+bptest(model_car)
+```
+syarat terpenuhi : p-value > 0.05
+
+Dari plot juga terbentuk pola sehingga syarat tidak terpenuhi 
+
+```{r}
+plot(model_car$fitted.values, model_car$residuals)
+abline(h = 0, col = "red")
+```
+
+## Linearity
+
+Dari plot juga terbentuk pola sihingga syarat tidak terpenuhi 
+
+```{r}
+data.frame(prediksi = model_car$fitted.values, error = model_car$residuals) %>% 
+  ggplot(aes(prediksi,error))+
+  geom_hline(yintercept = 0)+ #garis lurus di sumbu y = 0
+  geom_point()+
+  geom_smooth()
+```
+
+# Simpulan dan Saran
+
+pada uji Multikolinearitas, tidak ada nilai sama dengan atau lebih dari 10 sehingga tidak Multikolinearitas antar variabel
+Berdasarkan model ini, harga beli mobil berkorelasi besar pada harga pembelian mobil dan tahun pembuatan mobil tersebut 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

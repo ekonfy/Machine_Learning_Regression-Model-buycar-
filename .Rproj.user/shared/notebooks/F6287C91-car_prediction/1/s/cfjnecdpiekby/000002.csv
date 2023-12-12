@@ -1,0 +1,2 @@
+"0","df_data <- car_Data %>% "
+"0","  mutate_if(is.character, as.factor)"

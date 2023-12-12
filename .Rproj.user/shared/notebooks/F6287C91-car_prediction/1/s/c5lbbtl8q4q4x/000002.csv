@@ -1,0 +1,2 @@
+"0","options(scipen = 999)"
+"0","plot(df_data$Kms_Driven, df_data$Selling_Price)"

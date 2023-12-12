@@ -1,0 +1,23 @@
+"0","car_Data <- read.csv(""data_input/car data.csv"")"
+"0",""
+"0","glimpse(car_Data)"
+"1","Rows: 301"
+"1",""
+"1","
+"
+"1","Columns: 9"
+"1",""
+"1","
+"
+"1","$ Car_Name      [3m[38;5;246m<chr>[39m[23m ""ritz"", ""sx4"", ""ciaz"", ""wagon r"", ""swift"", ""vitara brezza"", ""ciaz"", ""s cross"", ""ciaz"", ""ciaz"", ""alto 800"", ""ciaz"", ""ciaz"", ""ertiga"", ""dzire~
+$ Year          [3m[38;5;246m<int>[39m[23m 2014, 2013, 2017, 2011, 2014, 2018, 2015, 2015, 2016, 2015, 2017, 2015, 2015, 2015, 2009, 2016, 2015, 2016, 2015, 2010, 2016, 2017, 2011, 2~
+$ Selling_Price [3m[38;5;246m<dbl>[39m[23m 3.35, 4.75, 7.25, 2.85, 4.60, 9.25, 6.75, 6.50, 8.75, 7.45, 2.85, 6.85, 7.50, 6.10, 2.25, 7.75, 7.25, 7.75, 3.25, 2.65, 2.85, 4.90, 4.40, 2~
+$ Present_Price [3m[38;5;246m<dbl>[39m[23m 5.59, 9.54, 9.85, 4.15, 6.87, 9.83, 8.12, 8.61, 8.89, 8.92, 3.60, 10.38, 9.94, 7.71, 7.21, 10.79, 10.79, 10.79, 5.09, 7.98, 3.95, 5.71, 8.0~
+$ Kms_Driven    [3m[38;5;246m<int>[39m[23m 27000, 43000, 6900, 5200, 42450, 2071, 18796, 33429, 20273, 42367, 2135, 51000, 15000, 26000, 77427, 43000, 41678, 43000, 35500, 41442, 250~
+$ Fuel_Type     [3m[38;5;246m<chr>[39m[23m ""Petrol"", ""Diesel"", ""Petrol"", ""Petrol"", ""Diesel"", ""Diesel"", ""Petrol"", ""Diesel"", ""Diesel"", ""Diesel"", ""Petrol"", ""Diesel"", ""Petrol"", ""Petrol"",~
+$ Seller_Type   [3m[38;5;246m<chr>[39m[23m ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"", ""Dealer"",~
+$ Transmission  [3m[38;5;246m<chr>[39m[23m ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Manual"", ""Automatic"", ""Manua~
+$ Owner         [3m[38;5;246m<int>[39m[23m 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0~"
+"1",""
+"1","
+"

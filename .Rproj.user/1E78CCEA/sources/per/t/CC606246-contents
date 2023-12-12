@@ -1,0 +1,433 @@
+---
+title: "Prediksi Penyebab Stroke"
+author: "Eko Nurfitriyanto"
+date: "4/1/2021"
+
+
+output: 
+  html_document:
+    theme: flatly
+    higlight: zenburn
+    toc: true
+    toc_float:
+      collapsed: false
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Latar belakang 
+
+Menganalisa dasar parameter pasien yang terkena stroke, pada dokumen ini akan dibuat data visualization untuk melihat parameter apa saja yang menjadi penyebab stroke pada pasien. 
+
+source : https://www.kaggle.com/fedesoriano/stroke-prediction-dataset
+
+```{r, include=TRUE}
+knitr::include_graphics("data/brain-stroke-png.png")
+```
+
+
+# Data Exploratory
+
+## Data Input & Structure 
+
+Proses import dataset stroke
+
+```{r}
+# Import data 
+stroke <- read.csv("data/healthcare-dataset-stroke-data.csv")
+```
+
+Cek Data 
+
+```{r}
+dim(stroke)
+```
+```{r}
+head(stroke, 5)
+```
+
+```{r}
+tail(stroke, 5)
+```
+
+```{r}
+str(stroke, 5)
+```
+
+## Cek Missing Data, Set Tipe Data dan Practical Statistics
+
+```{r}
+anyNA(stroke)
+```
+```{r}
+colSums(is.na(stroke))
+```
+ok, tidak ada missing data/value dan kita lanjut kita analisa
+
+
+set tipe data menjadi `factor` dan `numeric`
+
+```{r}
+stroke$gender <- as.factor(stroke$gender)
+
+stroke$ever_married <- as.factor(stroke$ever_married)
+
+stroke$work_type <- as.factor(stroke$work_type)
+
+stroke$Residence_type <- as.factor(stroke$Residence_type)
+
+stroke$smoking_status <- as.factor(stroke$smoking_status)
+
+stroke$bmi <- as.numeric(stroke$bmi)
+
+```
+
+
+lihat summary data 
+
+
+```{r}
+summary(stroke)
+```
+
+dapat disimpulkan didalam data terdapat informasi diantaranya : 
+
+1. terdapat 5110 data dengan 12 variable 
+2. didalam data terdapat wanita sebanyak 2994, pria 2115 dan lainnya 1 
+3. umur dari 8 bulan sampai 82 tahun, dengan rata-rata umur 43.23 
+4. terdapat data dimana dengan status kawin sebanyak 3353 dan tidak kawin 1757
+5. untuk tipe pekerjaan (work type) didominasi oleh jenis Private sebanyak 2925 
+6. dari data sebanyak 5110, jenis tempat tinggal dibagi 2 diantaranya Rural sebanyak 2514 dan Urban 2596 
+7. rata-rata level glukosa dalam darah untuk 5110 data adalah 106.15 dan nilai terkecil (min) 55.12, nilain terbesar (max) 271.74
+8. untuk masa tubuh atau BMI rata-rata sebesar 28.89 
+9. dari 5110 data, terdapat bahwa untuk never smoked lebih banyak sebesar 1892 
+
+
+
+## Data Pre Processing 
+
+
+mengubah ``stroke` dari angka 1 dan 0 menjadi nama `stroke `  dan ` no stroke`
+
+
+```{r}
+stroke$stroke <- sapply(X = as.character(stroke$stroke), FUN = switch,
+                        "1" = "stroke",
+                        "0" = "no stroke")
+
+stroke$stroke <- as.factor(stroke$stroke)
+
+head(stroke,5)
+
+
+
+```
+
+```{r}
+
+stroke$hypertension <- sapply(X = as.character(stroke$hypertension), FUN = switch,
+                        "1" = "hypertension",
+                        "0" = "no hypertension")
+
+stroke$hypertension <- as.factor(stroke$hypertension)
+head(stroke,5)
+
+```
+
+
+```{r}
+
+stroke$heart_disease <- sapply(X = as.character(stroke$heart_disease), FUN = switch,
+                        "1" = "heart_disease",
+                        "0" = "no heart_disease")
+
+stroke$heart_disease <- as.factor(stroke$heart_disease)
+head(stroke,5)
+
+```
+
+```{r}
+
+ifx_age <- function(X){
+  if (X < 20){
+    X <- "less than 20"
+  }else
+    if (X >= 20 & X < 30) {
+      X <- "between 20 and 30"
+    }else
+    if (X >= 30 & X < 40){
+      X <- "between 30 and 40"
+    }else
+    if (X >= 40 & X < 50){
+      X <- "between 40 and 50"
+    }else
+    if (X >= 50 & X < 60){
+      X <- "between 50 and 60"
+    }else
+    if (X >= 60 & X < 70){
+      X <- "between 60 and 70"
+    }else
+      X <- "More than 70"
+  
+}
+
+stroke$age_segment <- sapply(X = stroke$age, FUN = ifx_age)
+
+stroke$age_segment <- as.factor(stroke$age_segment)
+
+head(stroke,5)
+
+
+```
+
+
+
+```{r}
+ifx_glucose <- function(X){
+  if (X < 80){
+    X <- "less than 80"
+  }else
+    if (X >= 80 & X < 120) {
+      X <- "between 80 and 120"
+    }else
+    if (X >= 120 & X < 180){
+      X <- "between 120 and 180"
+    }else
+      X <- "More than 180"
+  
+}
+
+stroke$status_glucose <- sapply(X = stroke$avg_glucose_level, FUN = ifx_glucose)
+stroke$status_glucose <- as.factor(stroke$status_glucose)
+head(stroke,5)
+```
+
+# Data Explanatory & Study kasus
+
+
+
+1. Baik kita akan melihat distribusi umur terhadap gender penderita stroke
+
+
+```{r}
+stroke1 <- stroke[stroke$stroke=="stroke",]
+stroke1
+```
+
+
+
+```{r}
+library(ggplot2)
+ggplot(stroke1, aes(x = gender, y = age , fill = gender )) +
+  geom_boxplot(show.legend = T)+
+   labs(title = "Data Distribusi Umur Penderita Stroke terhadap Gender",
+       subtitle = "Redline indikasi rata-rata umur",
+       caption = "Source: https://www.kaggle.com",
+       x = " Gender", y = " Umur ")+
+  geom_hline(yintercept = mean(stroke1$age), color = "red", linetype = 5)
+  
+```
+
+
+ Dapat disimpulkan bahwa penderita stroke pada wanita lebih banyak, dan untuk wanita mempuyai nilai quartile terrendah daripada pria 
+
+
+
+
+2. kita akan mencari banyaknya penderita stroke berdasarkan tempat tinggal 
+
+```{r}
+trend_resident <- as.data.frame(table(stroke1$Residence_type))
+trend_resident
+```
+
+
+```{r}
+ggplot(trend_resident, aes(x = Var1, Freq))+
+  geom_col(aes(fill = Freq))+
+  geom_text(aes(label = Freq),color = "black", size = 5, nudge_y = 5)+
+  scale_fill_gradient(low = "#d260d6",high = "#69316b")+
+  labs(title = "Data Berdasarkan Tempat Tinggal",
+       subtitle = "Data Penderita Stroke",
+       x = "Tipe Tempat Tinggal",
+       y = "Banyaknya")
+  
+```
+  
+  
+  
+  bisa disimpulkan bahwa penderita stroke terbanyak terdapat pada didaerah perkotaan 
+
+
+
+
+
+3. Mencari data pekerjaan yang paling sering mengidap penyakit stroke
+```{r}
+trend_stroke <- as.data.frame(table(stroke1$work_type))
+trend_stroke
+```
+
+```{r}
+ggplot(trend_stroke, aes(x = Freq, reorder(Var1, Freq)))+
+  geom_col(aes(fill = Freq))+
+  geom_text(aes(label = Freq),color = "white", size = 5, hjust = 1.0) +
+  scale_fill_gradient(low = "#300202",high = "#db0b0b")+
+  labs(title = "Data Pekerjaan Paling Sering Pengidap Stroke",
+       subtitle = "Data Penderita Stroke",
+       x = "Banyaknya",
+       y = "")
+```
+  
+  
+  Pekerjaan yang paling banyak penderita storke adalah pada tipe Private dan tipe tidak pernah kerja/ belum bekerja tidak ada yang mengidap penyakit stroke 
+
+
+
+
+3. kita cari korelasi antara level glukosa dan bmi pada pasien stroke 
+
+```{r}
+ggplot(stroke1,aes(x = avg_glucose_level, bmi)) +
+  geom_point(aes(col = gender)) +
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  labs(title = "Korelasi antara level glukosa dan bmi pasien stroke",
+       subtitle = " ",
+       x = "Rata Rata Level Glukosa",
+       y = "BMI",
+       col = "Gender") +
+  theme(legend.position = "bottom")
+
+
+
+```
+  
+  
+4. kembali kita cari korelasi antara level glukosa dengan umur pasien stroke 
+
+```{r}
+ggplot(stroke1,aes(x = avg_glucose_level, age)) +
+  geom_point(aes(col = gender)) +
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  labs(title = "Korelasi antara level glukosa dan umur pasien stroke",
+       subtitle = " ",
+       x = "Rata-Rata Level Glukosa",
+       y = "Umur",
+       col = "Gender") +
+  theme(legend.position = "bottom")
+```
+
+
+
+
+5. Komparasi umur dengan hypertensi berdasarkan gender
+
+```{r}
+ggplot(stroke1, aes(x = frequency(gender) , y = age_segment)) +
+  geom_col(fill = "#d64fa5")+
+  facet_grid(hypertension~gender) +
+  labs(title = "Komparasi antara Wanita dan Pria Penderita Stroke ",
+  subtitle = "Umur dan Hypertensi",
+  x = "",
+  y = "Umur",
+  caption = "Source: https://www.kaggle.com")
+```
+
+
+
+
+ bisa disimpulkan bahwa umur diatas 50 tahun berpotensi mengidap stroke dan lebih banyak pada wanita 
+
+
+
+6. komparasi level glukosa dengan hypertensi berdasarkan gender 
+```{r}
+ggplot(stroke1, aes(x = frequency(gender) , y = status_glucose)) +
+  geom_col()+
+  scale_fill_viridis_b()+
+  facet_grid(hypertension~gender) +
+  labs(title = "Komparasi antara Wanita dan Pria Penderita Stroke",
+  subtitle = " Status Glukosa dan Hypertensi",
+  x = "",
+  y = "Status Glukosa level",
+  caption = "Source: https://www.kaggle.com")
+ 
+```
+
+
+
+bisa disimpulkan bahwa pemicu dari stroke dapat disebabkan karena level glukosa yang tinggi atau komplkasi antara gula darah tinggi dan hypertensi
+
+
+7.Komparasi antara hypertensi dengan kadar gula darah berdasarkan status merokok
+
+```{r}
+ggplot(stroke1, aes(x = frequency(smoking_status) , y = status_glucose)) +
+  geom_col()+
+  scale_fill_viridis_b()+
+  facet_grid(heart_disease~smoking_status) +
+  labs(title = "Komparasi Status Merokok Penderita Stroke",
+  subtitle = " Status Glukosa, Hypertensi",
+  x = "",
+  y = "Status Glukosa level",
+  caption = "Source: https://www.kaggle.com")
+```
+```{r}
+
+```
+
+
+
+  Dapat disimpulkan bahwa lebih banyak  penderita stroke yang tidak pernah merokok dan sebelumnya pernah merokok yang tidak punya penyakit jantung , dengan kadar gula darah pada `More than 180` dan `less than 180`
+  
+
+# Final Conclusion
+
+
+1. Wanita berpotensi lebih besar mengidap stroke 
+2. Pada pengidap stroke lebih banyak yang mempunyai tempat tinggal di perkotaan dan mempunyai pekerjaan di sektor Private
+3. Penyakit dengan gula darah dan hypertensi dengan gaya hidup sebelumnya pernah merokok berpotensi terjangkit serangan stroke
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

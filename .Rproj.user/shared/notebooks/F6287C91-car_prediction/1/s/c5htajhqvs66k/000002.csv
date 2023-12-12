@@ -1,0 +1,4 @@
+"0","df_data <- df_data %>% "
+"0","  mutate("
+"0","    Owner = ifelse(Owner == 3, yes = 1, no = Owner)) %>%  # ganti 3 jadi 1 / bila na pake is.na ganti tulisan owner nya "
+"0","  filter(Fuel_Type != ""CNG"") #buang fule cng"
